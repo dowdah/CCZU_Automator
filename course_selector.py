@@ -33,7 +33,6 @@ if os.path.exists(SESSION_PATH):
         session_data = json.load(f)
 else:
     session_data = dict()
-quote = lambda s: quote_legacy(s, safe="")
 get_userpasd = lambda username: accounts.get(username)
 
 
@@ -117,9 +116,6 @@ class cczuSession:
             return True
         else:
             return False
-
-    def check_project(self, i):
-        pass
 
 
 class Project:
