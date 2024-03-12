@@ -1,0 +1,10 @@
+{
+  "viewstate": "name=\"__VIEWSTATE\" id=\"__VIEWSTATE\" value=\"(.*?)\"",
+  "viewstategenerator": "name=\"__VIEWSTATEGENERATOR\" id=\"__VIEWSTATEGENERATOR\" value=\"(.*?)\"",
+  "viewstateencrypted": "name=\"__VIEWSTATEENCRYPTED\" id=\"__VIEWSTATEENCRYPTED\" value=\"(.*?)\"",
+  "err_msg": "<span id=\"lblMsg\" style=\"color:Red;\">(.*?)<\\/span>",
+  "user_info": "id=\"LabXsxx\" class=\"LableCss\" style=\"display:inline\\-block;font\\-size:12pt;width:96%;\">(.*?)<\\/span",
+  "project_line_dta": "class=\"dg1\\-item\" style=\"height:40px;\">(.*?)<\\/tr",
+  "project_info": "<td style=\"width:10%;\"><input type=\"button\" value=\"选 择\" onclick=\"javascript:__doPostBack\\('(.*?)','(.*?)'\\)\" class=\"btn btn\\-primary btn\\-xs\" style=\"width:50px;\" \\/><\\/td><td style=\"width:15%;\">(.*?)<\\/td><td style=\"width:15%;\">(.*?)<\\/td><td style=\"width:15%;\">(.*?)<\\/td><td style=\"width:15%;\">(.*?)<\\/td><td style=\"width:15%;\">(.*?)<\\/td><td style=\"width:15%;\">(.*?)<\\/td>",
+  "new_tab_info": "addNewTab\\('(.*?)','(.*?)','(.*?)'\\)"
+}

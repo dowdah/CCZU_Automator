@@ -1,21 +1,14 @@
 import requests
 import os
 import json
-from lxml import etree
-from urllib.parse import quote as quote_legacy
+import re
+import html
 
 ORIGIN_URL = "http://202.195.102.53"
 LOGIN_URL = f"{ORIGIN_URL}/loginN.aspx"
-PROJECT_MENU_URL = f"{ORIGIN_URL}/web_xsxk/gx_ty_xkfs_xh_sql.aspx"
-PROJECT_OPTIONS_MENU_URL = f"{ORIGIN_URL}/web_xsxk/xfz_xsxk_gnxz.aspx"
-VIEWSTATE_XPATH = '//*[@id="__VIEWSTATE"]/@value'
-VIEWSTATEGENERATOR_XPATH = '//*[@id="__VIEWSTATEGENERATOR"]/@value'
-ERRMSG_XPATH = '//*[@id="lblMsg"]/text()'
-USERINFO_XPATH = '//*[@id="LabXsxx"]/text()'
-TABLE_LINES_XPATH_0 = '//*[@id="UpdatePanel1"]//tr'  # projects
-TABLE_UNIT_XPATH_0 = '//th/text()'
-TABLE_UNIT_XPATH_1 = '//td/text()'
+INDEX_URL = f"{ORIGIN_URL}/web_xsxk/gx_ty_xkfs_xh_sql.aspx"
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+REGEX_LOCATOR_PATH = f"{BASE_DIR}/regex_locator.json"
 SESSION_PATH = f"{BASE_DIR}/session.json"
 ACCOUNTS_PATH = f"{BASE_DIR}/student_accounts.json"
 if os.path.exists(ACCOUNTS_PATH):
@@ -23,6 +16,17 @@ if os.path.exists(ACCOUNTS_PATH):
         accounts = json.load(f)
 else:
     print("Missing student_accounts.json file.")
+    exit(1)
+if os.path.exists(REGEX_LOCATOR_PATH):
+    with open(REGEX_LOCATOR_PATH) as f:
+        regex_locator = json.load(f)
+    for k, v in regex_locator.items():
+        if k[-3:] == 'dta':
+            regex_locator[k] = re.compile(v, re.DOTALL)
+        else:
+            regex_locator[k] = re.compile(v)
+else:
+    print("Missing regex_locator.json file.")
     exit(1)
 if os.path.exists(SESSION_PATH):
     with open(SESSION_PATH) as f:
@@ -52,27 +56,31 @@ class cczuSession:
             else:
                 print(f'登录失败,用户名:{self.username},密码:{self.userpasd}')
 
-
     def login(self):
         headers = {'Referer': 'http://202.195.102.53/'}
-        response_html = etree.HTML(self.session.get(ORIGIN_URL).text)
-        viewstate = quote(response_html.xpath(VIEWSTATE_XPATH)[0])  # url encoded
-        viewstategenerator = quote(response_html.xpath(VIEWSTATEGENERATOR_XPATH)[0])  # url encoded
-        payload = f"__VIEWSTATE={viewstate}&__VIEWSTATEGENERATOR={viewstategenerator}&username={self.username}&userpasd={self.userpasd}&btLogin=%E7%99%BB%E5%BD%95"
+        response_html = self.session.get(ORIGIN_URL).text
+        viewstate = regex_locator["viewstate"].findall(response_html)[0]  # url encoded
+        viewstategenerator = regex_locator["viewstategenerator"].findall(response_html)[0]  # url encoded
+        payload = {'__VIEWSTATE': viewstate,
+                   '__VIEWSTATEGENERATOR': viewstategenerator,
+                   'username': self.username,
+                   'userpasd': self.userpasd,
+                   'btLogin': '登录'}
         headers = {'Referer': 'http://202.195.102.53/', 'Content-Type': 'application/x-www-form-urlencoded'}
-        response_html = etree.HTML(self.session.post(LOGIN_URL, data=payload, headers=headers).text)
-        if response_html.xpath(ERRMSG_XPATH):
-            if response_html.xpath(ERRMSG_XPATH)[0].find("你输入的用户名称或者密码有误，请重新输入") != -1:
-                print(f"{ self.username }:用户名称或者密码有误")
+        response_html = self.session.post(LOGIN_URL, data=payload, headers=headers).text
+        err_msg = regex_locator["err_msg"].findall(response_html)
+        if err_msg:
+            if err_msg[0].find("你输入的用户名称或者密码有误，请重新输入") != -1:
+                print(f"{self.username}:用户名称或者密码有误")
             return False
         else:
             return True
 
     def update_user_info(self):
-        response_html = etree.HTML(self.session.get(PROJECT_MENU_URL).text)
-        userinfo_div_list = response_html.xpath(USERINFO_XPATH)
-        if userinfo_div_list:
-            self.userinfo = userinfo_div_list[0]
+        response_html = self.session.get(INDEX_URL).text
+        user_info = regex_locator["user_info"].findall(response_html)
+        if user_info:
+            self.userinfo = user_info[0]
             return True
         else:
             return False
@@ -94,51 +102,67 @@ class cczuSession:
 
     def update_projects(self):
         self.projects = list()
-        response_html = etree.HTML(self.session.get(PROJECT_MENU_URL).text)
-        table_lines = response_html.xpath(TABLE_LINES_XPATH_0)
-        if table_lines:
-            # table_headers = table_lines[0].xpath(TABLE_UNIT_XPATH_0)
-            # if table_headers:
-            #     for table_header in table_headers[1:-1]:
-            #         print(table_header, end=" | ")
-            #     else:
-            #         print(table_headers[-1])
-            for table_line in table_lines[1:]:
-                table_units = list()
-                table_units_raw = table_line.xpath(TABLE_UNIT_XPATH_1)
-                if table_units_raw:
-                    for table_unit_raw in table_units_raw[1:]:
-                        if table_unit_raw.find('\r\n') == -1:
-                            table_units.append(table_unit_raw)
-                    if table_units:
-                        project = Project(table_units[0], table_units[1], table_units[2], table_units[3],
-                                          table_units[4], table_units[5])
-                        self.projects.append(project)
-                        # for table_unit in table_units[:-1]:
-                        #     print(table_unit, end=" | ")
-                        # else:
-                        #     print(table_units[-1])
-            if len(self.projects):
-                return True
-            else:
-                return False
+        response_html = self.session.get(INDEX_URL).text
+        viewstate = regex_locator["viewstate"].findall(response_html)[0]
+        viewstategenerator = regex_locator["viewstategenerator"].findall(response_html)[0]
+        viewstateencrypted = regex_locator["viewstateencrypted"].findall(response_html)[0]
+        project_lines = [html.unescape(x) for x in regex_locator["project_line_dta"].findall(response_html)]
+        if project_lines:
+            for line in project_lines:
+                project = Project(*regex_locator["project_info"].findall(line)[0], viewstate,
+                                  viewstategenerator, viewstateencrypted)
+                if not project.fetch_tab_info(self.session):
+                    print(f"Failed to fetch tab info for {project}")
+                self.projects.append(project)
+            return True
+        else:
+            return False
+
+    def check_project(self, i):
+        pass
 
 
 class Project:
-    def __init__(self, semester, code, name, start_date, end_date, comment):
+    def __init__(self, target, argument, semester, code, name, start_date, end_date, comment,
+                 viewstate, viewstategenerator, viewstateencrypted=''):
+        self.target = target
+        self.argument = argument
+        self.viewstate = viewstate
+        self.viewstategenerator = viewstategenerator
+        self.viewstateencrypted = viewstateencrypted
         self.semester = semester
         self.code = code
         self.name = name
         self.start_date = start_date
         self.end_date = end_date
         self.comment = comment
+        self.tab_url = None
+        self.tab_name = None
 
     def __repr__(self):
         return f"<Project {self.name}({self.code})>"
+
+    def fetch_tab_info(self, session):
+        payload = {'ScriptManager1': 'UpdatePanel1|' + self.target,
+                    '__EVENTTARGET': self.target,
+                    '__EVENTARGUMENT': self.argument,
+                    '__VIEWSTATE': self.viewstate,
+                    '__VIEWSTATEGENERATOR': self.viewstategenerator,
+                    '__VIEWSTATEENCRYPTED': self.viewstateencrypted,
+                    '__ASYNCPOST': 'true'}
+        response_html = session.post(INDEX_URL, data=payload).text
+        new_tab_info = regex_locator["new_tab_info"].findall(response_html)
+        if new_tab_info:
+            new_tab_info = new_tab_info[0]  # (tab_url,tab_code,tab_name)
+            self.tab_url = ORIGIN_URL + new_tab_info[0][2:]
+            self.tab_name = new_tab_info[2]
+            return True
+        else:
+            return False
 
 
 if __name__ == "__main__":
     cczu_session = cczuSession("2300160429")
     print(cczu_session.userinfo)
     for project in cczu_session.projects:
-        print(project)
+        print(project, project.tab_name, project.tab_url)
