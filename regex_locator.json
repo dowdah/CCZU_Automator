@@ -1,4 +1,5 @@
 {
+  "init_args": "Sys\\.WebForms\\.PageRequestManager\\._initialize\\((.*?)\\)",
   "viewstate": "name=\"__VIEWSTATE\" id=\"__VIEWSTATE\" value=\"(.*?)\"",
   "viewstategenerator": "name=\"__VIEWSTATEGENERATOR\" id=\"__VIEWSTATEGENERATOR\" value=\"(.*?)\"",
   "viewstateencrypted": "name=\"__VIEWSTATEENCRYPTED\" id=\"__VIEWSTATEENCRYPTED\" value=\"(.*?)\"",
@@ -6,5 +7,9 @@
   "user_info": "id=\"LabXsxx\" class=\"LableCss\" style=\"display:inline\\-block;font\\-size:12pt;width:96%;\">(.*?)<\\/span",
   "project_line_dta": "class=\"dg1\\-item\" style=\"height:40px;\">(.*?)<\\/tr",
   "project_info": "<td style=\"width:10%;\"><input type=\"button\" value=\"选 择\" onclick=\"javascript:__doPostBack\\('(.*?)','(.*?)'\\)\" class=\"btn btn\\-primary btn\\-xs\" style=\"width:50px;\" \\/><\\/td><td style=\"width:15%;\">(.*?)<\\/td><td style=\"width:15%;\">(.*?)<\\/td><td style=\"width:15%;\">(.*?)<\\/td><td style=\"width:15%;\">(.*?)<\\/td><td style=\"width:15%;\">(.*?)<\\/td><td style=\"width:15%;\">(.*?)<\\/td>",
-  "new_tab_info": "addNewTab\\('(.*?)','(.*?)','(.*?)'\\)"
+  "new_tab_info": "addNewTab\\('(.*?)','(.*?)','(.*?)'\\)",
+  "course_selection_result": "ScriptContentNoTags\\|alert\\('(.*?)'\\)",
+  "link_button": "href=\"javascript:__doPostBack\\(&#39;(.*?)&#39;,&#39;(.*?)&#39;\\)\" style=\"display:inline\\-block;height:28px;width:80%;\">(.*?)<\\/a>",
+  "dg1_item_dta": "<tr class=\"dg1\\-item\">(.*?)<\\/tr>",
+  "target_args": "javascript:__doPostBack\\('(.*?)','(.*?)'\\)"
 }
